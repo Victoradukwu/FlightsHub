@@ -4,4 +4,10 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "alembic>=1.17.2",
+    "fastapi>=0.124.4",
+    "httpx>=0.28.1",
+    "sqlmodel>=0.0.27",
+    "uvicorn>=0.38.0",
+]
