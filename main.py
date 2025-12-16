@@ -1,5 +1,11 @@
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/")
 def main():
-    print("Hello from flightshub!")
+    return "Hello from here again updated"
 
 
 if __name__ == "__main__":
