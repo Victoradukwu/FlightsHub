@@ -5,7 +5,9 @@ from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
 from config import get_settings
-from models import *  # noqa: F403
+from common.models import *  # noqa: F403
+from authentication.models import *  # noqa: F403
+from flights.models import *  # noqa: F403
 
 settings = get_settings()
 

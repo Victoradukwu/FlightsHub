@@ -1,6 +1,6 @@
-# from datetime import datetime
+
 from datetime import datetime
-from sqlmodel import SQLModel, Field  # noqa: F401
+from sqlmodel import SQLModel, Field
 
 
 
@@ -12,3 +12,4 @@ class User(SQLModel, table=True):
     phone_number: str
     created_at: datetime
     updated_at: datetime
+    status: str
