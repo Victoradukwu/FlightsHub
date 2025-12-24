@@ -4,7 +4,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
-from config import get_settings
+from app.config import get_settings
 from common.models import *  # noqa: F403
 from authentication.models import *  # noqa: F403
 from flights.models import *  # noqa: F403

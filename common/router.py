@@ -1,3 +1,4 @@
+
 from fastapi import APIRouter
 
 router = APIRouter(
@@ -5,6 +6,10 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-@router.get("/", tags=["custom"])
+@router.get(
+    "/",
+    summary="Just testing",
+    response_description="Testing path in the Common module",
+)
 def common():
     return "Hello from here again updated"
