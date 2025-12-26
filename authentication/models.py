@@ -1,37 +1,66 @@
-
-from __future__ import annotations  # noqa: F401
+from __future__ import annotations
 
 import hashlib
-from typing import Annotated  # noqa: F401
+from datetime import datetime
+from typing import Annotated, Literal, Optional
 
-from annotated_types import MinLen  # noqa: F401
-from pydantic import AfterValidator, EmailStr
-from sqlmodel import SQLModel
+from annotated_types import MinLen
+from pydantic import AfterValidator, BaseModel, EmailStr, model_validator
+from sqlmodel import Field
+
+from common.models import TimestampMixin
 
 
 def _hash(val: str) -> str:
     return hashlib.sha256(val.encode()).hexdigest()
 
 
-class UserBase(SQLModel):
+class UserBaseMixin(BaseModel):
+    first_name: str
+    last_name: str
     username: str
     email: EmailStr
-    full_name: str | None = None
+    phone_number: str
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}"
 
 
-class UserIn(UserBase):
+class PasswordMixin(BaseModel):
     password: Annotated[str, MinLen(8), AfterValidator(_hash)]
+    confirm_password: Annotated[str, MinLen(8), AfterValidator(_hash)]
 
 
-class UserOut(UserBase):
-    pass
+class UserCreate(UserBaseMixin, PasswordMixin):
+    @model_validator(mode="after")
+    def check_passwords_match(self) -> "UserCreate":
+        if self.password != self.confirm_password:
+            raise ValueError("Passwords do not match")
+        return self
 
 
-class UserInDB(UserBase):
-    hashed_password: str
+class UserLogin(BaseModel):
+    password: Annotated[str, MinLen(6), AfterValidator(_hash)]
+    username: str
 
 
-def fake_save_user(user_in: UserIn):
-    user_in_db = UserInDB(**user_in.model_dump())
-    print("User saved! ..not really")
-    return user_in_db
+class UserOut(BaseModel):
+    id: Optional[int]
+    first_name: str
+    last_name: str
+    username: str
+    email: EmailStr
+    phone_number: str
+    created_at: datetime
+    updated_at: datetime
+    status: Literal["Active", "Inactive"]
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}"
+
+
+class User(UserBaseMixin, TimestampMixin, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    password: str

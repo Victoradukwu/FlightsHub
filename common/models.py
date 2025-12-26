@@ -1,15 +1,22 @@
-
 from datetime import datetime
 from sqlmodel import SQLModel, Field
+from sqlalchemy import Column, DateTime, func
 
 
+class TimestampMixin(SQLModel):
+    created_at: datetime = Field(
+        sa_column=Column(
+            DateTime(timezone=True),
+            nullable=False,
+            server_default=func.now(),
+        )
+    )
 
-class User(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
-    first_name: str
-    last_name: str
-    email: str
-    phone_number: str
-    created_at: datetime
-    updated_at: datetime
-    status: str
+    updated_at: datetime = Field(
+        sa_column=Column(
+            DateTime(timezone=True),
+            nullable=False,
+            server_default=func.now(),
+            onupdate=func.now(),
+        )
+    )
