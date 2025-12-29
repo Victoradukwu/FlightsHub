@@ -80,9 +80,21 @@ class UserCreate(UserBaseMixin, PasswordMixin):  # type: ignore
             raise RequestValidationError(errors)
 
 
-# class UserLogin(BaseModel):
-#     password: Annotated[str, MinLen(6), AfterValidator(_hash)]
-#     username: str
+class PasswordChange(BaseModel):
+    old_password: Annotated[str, MinLen(6)]
+    new_password: Annotated[str, MinLen(6)]
+    confirm_password: Annotated[str, MinLen(6)]
+
+    @model_validator(mode="before")
+    def check_passwords_match(cls, values: dict[str, Any]) -> dict[str, Any]:
+        """Ensure plaintext passwords match before any field validators (e.g., hashing) run."""
+        password = values.get("new_password")
+        confirm = values.get("confirm_password")
+        if password is None or confirm is None:
+            return values
+        if password != confirm:
+            raise ValueError("Passwords do not match")
+        return values
 
 
 class UserOut(BaseModel):

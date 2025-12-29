@@ -2,15 +2,23 @@ from datetime import timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
-from authentication.utils import authenticate_user, create_access_token, get_current_active_user, get_settings
+from authentication.utils import (
+    authenticate_user,
+    create_access_token,
+    get_current_active_user,
+    get_password_hash,
+    get_settings,
+    verify_password,
+)
 from common.utils import file_upload
 from db import SessionDep
 
-from .models import Token, User, UserCreate, UserOut
+from .models import PasswordChange, Token, User, UserCreate, UserOut
 
 settings = get_settings()
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
@@ -77,3 +85,15 @@ async def login_for_access_token(
 @router.get("/users/me/", response_model=UserOut)
 async def read_users_me(current_user: Annotated[User, Depends(get_current_active_user)]):
     return current_user
+
+
+@router.post("/password/change/")
+async def change_password(
+    user: PasswordChange, current_user: Annotated[User, Depends(get_current_active_user)], session: SessionDep
+):
+    if verify_password(user.old_password, current_user.password):
+        current_user.password = get_password_hash(user.new_password)
+        session.add(current_user)
+        session.commit()
+        return JSONResponse(content="Password successfully changed")
+    return JSONResponse(content="Could not authenticate user")
