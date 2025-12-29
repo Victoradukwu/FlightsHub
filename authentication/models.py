@@ -1,20 +1,21 @@
 from __future__ import annotations
 
-import hashlib
 from datetime import datetime
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Any, Literal, Optional
 
 from annotated_types import MinLen
 from fastapi import Form
 from fastapi.exceptions import RequestValidationError
+from pwdlib import PasswordHash
 from pydantic import AfterValidator, BaseModel, EmailStr, ValidationError, model_validator
 from sqlmodel import Field, SQLModel
 
 from common.models import TimestampMixin
 
-
+password_hash = PasswordHash.recommended()
 def _hash(val: str) -> str:
-    return hashlib.sha256(val.encode()).hexdigest()
+    hashed_ = password_hash.hash(val)
+    return hashed_
 
 
 class UserBaseMixin(SQLModel):
@@ -31,15 +32,21 @@ class UserBaseMixin(SQLModel):
 
 class PasswordMixin(BaseModel):
     password: Annotated[str, MinLen(6), AfterValidator(_hash)]
-    confirm_password: Annotated[str, MinLen(6), AfterValidator(_hash)]
+    confirm_password: Annotated[str, MinLen(6)]
 
 
 class UserCreate(UserBaseMixin, PasswordMixin):  # type: ignore
-    @model_validator(mode="after")
-    def check_passwords_match(self) -> "UserCreate":
-        if self.password != self.confirm_password:
+    @model_validator(mode="before")
+    def check_passwords_match(cls, values: dict[str, Any]) -> dict[str, Any]:
+        """Ensure plaintext passwords match before any field validators (e.g., hashing) run."""
+        password = values.get("password")
+        confirm = values.get("confirm_password")
+        # If either value is missing, leave validation to other validators
+        if password is None or confirm is None:
+            return values
+        if password != confirm:
             raise ValueError("Passwords do not match")
-        return self
+        return values
 
     @classmethod
     def as_form(
@@ -73,9 +80,9 @@ class UserCreate(UserBaseMixin, PasswordMixin):  # type: ignore
             raise RequestValidationError(errors)
 
 
-class UserLogin(BaseModel):
-    password: Annotated[str, MinLen(6), AfterValidator(_hash)]
-    username: str
+# class UserLogin(BaseModel):
+#     password: Annotated[str, MinLen(6), AfterValidator(_hash)]
+#     username: str
 
 
 class UserOut(BaseModel):
@@ -100,3 +107,9 @@ class User(UserBaseMixin, TimestampMixin, table=True):
     password: str
     avatar: str
     status: Optional[str] = Field(default="Active")
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserOut

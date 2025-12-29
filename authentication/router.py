@@ -1,13 +1,19 @@
+from datetime import timedelta
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 
+from authentication.utils import authenticate_user, create_access_token, get_current_active_user, get_settings
 from common.utils import file_upload
 from db import SessionDep
 
-from .models import User, UserCreate, UserOut
+from .models import Token, User, UserCreate, UserOut
+
+settings = get_settings()
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
 
 router = APIRouter(
     prefix="/auth",
@@ -49,3 +55,25 @@ async def register(
         # Race condition fallback: unique constraint at DB-level violated
         raise HTTPException(status_code=409, detail="Username or email already in use")
     return usr
+
+
+@router.post("/token/")
+async def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+) -> Token:
+    user = authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    user_out = UserOut(**user.model_dump())
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+    return Token(access_token=access_token, token_type="bearer", user=user_out)
+
+
+@router.get("/users/me/", response_model=UserOut)
+async def read_users_me(current_user: Annotated[User, Depends(get_current_active_user)]):
+    return current_user
