@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
+    EMAIL_ADDRESS: str
+    EMAIL_PASSWORD: str
+    FE_PW_RESET_URL: str
     ALGORITHM: str = "HS256"
     app_name: str = "FlightsHub"
     model_config = SettingsConfigDict(env_file=str(Path(__file__).parent / "local.env"))

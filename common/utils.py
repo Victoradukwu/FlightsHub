@@ -1,8 +1,15 @@
 import os
+import re
+import smtplib
 import uuid
+from email.message import EmailMessage
 from typing import Optional
 
 from fastapi import UploadFile
+
+from app.config import get_settings
+
+settings = get_settings()
 
 
 async def file_upload(file: UploadFile, model_name: Optional[str] = None) -> str:
@@ -34,3 +41,20 @@ async def file_upload(file: UploadFile, model_name: Optional[str] = None) -> str
     # Return a forward-slash path usable in URLs
     return file_path.replace(os.sep, "/")
 
+
+def send_email(to_email: str, subject: str, body: str):
+    email_address = settings.EMAIL_ADDRESS
+    email_password = settings.EMAIL_PASSWORD
+    plain = re.sub(r"<[^>]*>", "", body)
+
+    msg = EmailMessage()
+    msg["From"] = email_address
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg.set_content(plain)
+    msg.add_alternative(body, subtype="html")
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(email_address, email_password)  # type: ignore
+        server.send_message(msg)
+        server.send_message(msg)
