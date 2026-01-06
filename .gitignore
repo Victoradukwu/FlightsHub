@@ -8,6 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+app/local.env
 uploads
 
 

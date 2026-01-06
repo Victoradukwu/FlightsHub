@@ -1,8 +1,8 @@
-import os
 import re
 import smtplib
 import uuid
 from email.message import EmailMessage
+from pathlib import Path
 from typing import Optional
 
 from fastapi import UploadFile
@@ -21,25 +21,25 @@ async def file_upload(file: UploadFile, model_name: Optional[str] = None) -> str
     if file is None or file.filename is None:
         raise ValueError("No file provided")
 
-    location = os.path.join("medias", model_name) if model_name else "medias"
-    os.makedirs(os.path.join("uploads", location), exist_ok=True)
+    location = "medias"
+    if model_name:
+        location += f"/{model_name}"
+
+    pth = Path("uploads") / location
+    pth.mkdir(parents=True, exist_ok=True)
 
     filename = file.filename
     ext = filename.split(".")[-1] if "." in filename else ""
     filename = f"{uuid.uuid4().hex}{f'.{ext}' if ext else ''}"
 
-    file_path = os.path.join(location, filename)
-    dest_path = os.path.join("uploads", file_path)
+    file_path = Path(location) / filename
+    dest_path = pth / filename
 
-    # Read and write the file content
     content = await file.read()
-    with open(dest_path, "wb") as f:
-        f.write(content)
-
+    dest_path.write_bytes(content)
     await file.close()
 
-    # Return a forward-slash path usable in URLs
-    return file_path.replace(os.sep, "/")
+    return str(file_path)
 
 
 def send_email(to_email: str, subject: str, body: str):
@@ -56,5 +56,4 @@ def send_email(to_email: str, subject: str, body: str):
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(email_address, email_password)  # type: ignore
-        server.send_message(msg)
         server.send_message(msg)
