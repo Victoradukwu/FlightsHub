@@ -9,3 +9,6 @@ wheels/
 # Virtual environments
 .venv
 uploads
+
+
+.vscode/PythonImportHelper-v2-Completion.json
