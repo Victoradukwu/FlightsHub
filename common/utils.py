@@ -48,7 +48,7 @@ def send_email(to_email: str, subject: str, body: str):
     plain = re.sub(r"<[^>]*>", "", body)
 
     msg = EmailMessage()
-    msg["From"] = email_address
+    msg["From"] = settings.EMAIL_SENDER
     msg["To"] = to_email
     msg["Subject"] = subject
     msg.set_content(plain)

@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     EMAIL_ADDRESS: str
+    EMAIL_SENDER: str
     EMAIL_PASSWORD: str
     FE_PW_RESET_URL: str
     ALGORITHM: str = "HS256"

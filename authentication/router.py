@@ -115,13 +115,14 @@ async def reset_password(username: str, background_tasks: BackgroundTasks):
         <body>
         Hi {user.first_name},
         <p>
-        We received a password reset request from you. Kindly click on the link below and follw the instruction. If the link is not clickable, copy this and past into your browser: {settings.FE_PW_RESET_URL}/?token={access_token}
+        We received a password reset request from you.  <a href={settings.FE_PW_RESET_URL}/?token={access_token}>Click here to reset password</a>. 
         </p>
-        <p> <a href={settings.FE_PW_RESET_URL}/?token={access_token}>Click here to reset password</a></p>
-        
+        <p>
+        If the link does not respond, copy this and past into your browser: {settings.FE_PW_RESET_URL}/?token={access_token}
+        </p>
         Thank you,
-        
-        Flightshub Team
+        <br>
+        FlightsHub Team
         </body>
         </html>
         """
