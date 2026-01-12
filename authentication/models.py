@@ -132,6 +132,7 @@ class UserOut(BaseModel):
 
 
 class User(UserBaseMixin, TimestampMixin, table=True):
+    __tablename__ = "users" # type: ignore
     id: Optional[int] = Field(default=None, primary_key=True)
     password: str
     avatar: str
