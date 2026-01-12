@@ -13,3 +13,7 @@ uploads
 
 
 .vscode/PythonImportHelper-v2-Completion.json
+
+# Suspend testing for now
+
+/tests
