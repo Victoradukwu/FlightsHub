@@ -1,6 +1,5 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, func
 from sqlmodel import Field, MetaData, SQLModel
 
 convention = {
@@ -11,23 +10,22 @@ convention = {
     "pk": "pk_%(table_name)s",
 }
 
+def utcnow():
+    """Returns the current time in UTC."""
+    return datetime.now(timezone.utc)
+
+
 # Apply the convention to your metadata
 SQLModel.metadata = MetaData(naming_convention=convention)
 
 class TimestampMixin(SQLModel):
     created_at: datetime = Field(
-        sa_column=Column(
-            DateTime(timezone=True),
-            nullable=False,
-            server_default=func.now(),
-        )
+        default_factory=utcnow,
+        nullable=False,
     )
 
     updated_at: datetime = Field(
-        sa_column=Column(
-            DateTime(timezone=True),
-            nullable=False,
-            server_default=func.now(),
-            onupdate=func.now(),
-        )
+        default_factory=utcnow,
+        nullable=False,
+        sa_column_kwargs={"onupdate": utcnow},
     )

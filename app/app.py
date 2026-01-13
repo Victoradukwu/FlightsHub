@@ -5,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from authentication.router import router as auth_router
-# from flights.router import router as flight_router
 from common.router import router as common_router
+from flights.router import router as flight_router
 
 from . import middlewares
 
@@ -14,7 +14,7 @@ api_v1_router = APIRouter(prefix="/api/v1")
 
 api_v1_router.include_router(auth_router, tags=["auth"])
 api_v1_router.include_router(common_router, tags=['common'])
-# api_v1_router.include_router(flight_router, tags=['flights])
+api_v1_router.include_router(flight_router, tags=["flights"])
 
 
 app = FastAPI(title="FlightsHub API", version="0.1.0", description="FlightsHub API Project")

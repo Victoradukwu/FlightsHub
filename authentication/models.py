@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 from typing import Annotated, Any, Literal, Optional
 
 from annotated_types import MinLen
@@ -8,6 +9,7 @@ from fastapi import Form
 from fastapi.exceptions import RequestValidationError
 from pwdlib import PasswordHash
 from pydantic import AfterValidator, BaseModel, EmailStr, ValidationError, model_validator
+from sqlalchemy import Column, String
 from sqlmodel import Field, SQLModel
 
 from common.models import TimestampMixin
@@ -122,6 +124,7 @@ class UserOut(BaseModel):
     email: EmailStr
     phone_number: str
     status: Literal["Active", "Inactive"]
+    role: str
     avatar: Optional[str]
     created_at: datetime
     updated_at: datetime
@@ -131,12 +134,19 @@ class UserOut(BaseModel):
         return f"{self.first_name} {self.last_name}"
 
 
+class UserRole(str, Enum):
+    GLOBAL_ADMIN = "Global Admin"
+    AIRLINE_ADMIN = "Airline Admin"
+    PASSENGER = "Passenger"
+
+
 class User(UserBaseMixin, TimestampMixin, table=True):
     __tablename__ = "users" # type: ignore
     id: Optional[int] = Field(default=None, primary_key=True)
     password: str
     avatar: str
     status: Optional[str] = Field(default="Active")
+    role: Optional[UserRole] = Field(default=UserRole.PASSENGER, sa_column=Column(String, nullable=False) )
 
 
 class Token(BaseModel):

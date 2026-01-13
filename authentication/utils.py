@@ -44,7 +44,7 @@ def authenticate_user(username: str, password: str)->Optional[User]:
     return user
 
 
-def create_access_token(data: dict, expires_delta: timedelta=timedelta(minutes=15))->str:
+def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=1440)) -> str:
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + expires_delta
     to_encode.update({"exp": expire})

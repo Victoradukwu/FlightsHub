@@ -1,0 +1,44 @@
+.
+├── Dockerfile
+├── README.md
+├── alembic.ini
+├── app
+│   ├── __init__.py
+│   ├── app.py
+│   ├── config.py
+│   ├── dependencies.py
+│   ├── exceptions.py
+│   ├── local.env
+│   └── middlewares.py
+├── authentication
+│   ├── __init__.py
+│   ├── models.py
+│   ├── router.py
+│   └── utils.py
+├── common
+│   ├── __init__.py
+│   ├── models.py
+│   ├── router.py
+│   └── utils.py
+├── db.py
+├── flights
+│   ├── __init__.py
+│   ├── models.py
+│   └── router.py
+├── migrations
+│   ├── README
+│   ├── env.py
+│   ├── script.py.mako
+│   └── versions
+│       └── 2fa34bd32ebd_rerun_migrations.py
+├── pyproject.toml
+├── tests
+│   ├── __init__.py
+│   ├── conftest.py
+│   └── test_auth.py
+├── tree.png
+├── uploads
+│   └── mediasusers
+└── uv.lock
+
+9 directories, 32 files
