@@ -1,3 +1,4 @@
+
 .
 ├── Dockerfile
 ├── README.md
@@ -30,15 +31,19 @@
 │   ├── env.py
 │   ├── script.py.mako
 │   └── versions
-│       └── 2fa34bd32ebd_rerun_migrations.py
+│       └── a7a63f3582fc_initial_migration.py
 ├── pyproject.toml
+├── sample.env
 ├── tests
 │   ├── __init__.py
 │   ├── conftest.py
 │   └── test_auth.py
 ├── tree.png
 ├── uploads
+│   ├── medias
+│   │   └── users
+│   │       └── dd0f968ed15745fd96eba1c500afcf8a.jpg
 │   └── mediasusers
 └── uv.lock
 
-9 directories, 32 files
+11 directories, 34 files

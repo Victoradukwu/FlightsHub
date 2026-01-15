@@ -19,8 +19,7 @@ from authentication.utils import (
 )
 from common.utils import file_upload, send_email
 from db import SessionDep
-
-from .models import PasswordChange, PasswordReset, Token, User, UserCreate, UserOut
+from models.authentication import PasswordChange, PasswordReset, Token, User, UserCreate, UserOut
 
 settings = get_settings()
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES

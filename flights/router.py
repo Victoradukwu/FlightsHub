@@ -3,11 +3,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from sqlmodel import select
 
-from authentication.models import User
 from authentication.utils import get_current_active_user, get_settings
 from db import SessionDep
-
-from .models import Airport, AirportBase, AirportUpdate
+from models.authentication import User
+from models.flights import Airline  # noqa: F401
+from models.flights import AirlineOut  # noqa: F401
+from models.flights import AirlineUpdate  # noqa: F401
+from models.flights import Airport, AirportBase, AirportUpdate
 
 settings = get_settings()
 
@@ -118,3 +120,72 @@ async def update_airport(
     session.commit()
     session.refresh(stored_port)
     return stored_port
+
+
+# @router.post("/airlines/", response_model=Airline)
+# async def create_airline(
+#     airline: AirlineUpdate, session: SessionDep, current_user: Annotated[User, Depends(get_current_active_user)]
+# ):
+#     if not current_user or current_user.role != "Global Admin":
+#         raise HTTPException(status_code=403, detail="Permission denied")
+
+#     airline_obj = Airline(**airline.model_dump())
+#     session.add(airline_obj)
+#     try:
+#         session.commit()
+#         session.refresh(airline_obj)
+#     except Exception as exc_:
+#         session.rollback()
+#         raise HTTPException(detail=str(exc_), status_code=400)
+#     return airline_obj
+
+
+# @router.get("/airlines/", response_model=list[AirlineOut])
+# async def list_airlines(
+#     session: SessionDep,
+#     q: Annotated[str | None, Query(max_length=10)] = None,
+# ):
+#     stmt = select(Airline)
+#     conditions = []
+#     if q:
+#         # case-insensitive substring match on name
+#         conditions.append(Airline.airline_name.ilike(f"%{q}%"))  # type: ignore
+
+#     if conditions:
+#         stmt = stmt.where(*conditions)
+#     return session.exec(stmt).all()
+
+
+# @router.get("/airlines/{id}/")
+# async def airline_retrieve(id: Annotated[int, Path(title="The Airline id")], session: SessionDep) -> Airline:
+#     airline = session.get(Airline, id)
+#     if airline is None:
+#         raise HTTPException(status_code=404, detail="Airline Not found")
+#     return airline
+
+
+# @router.patch("/airlines/{id}/", response_model=Airline)
+# async def update_airline(
+#     id: int,
+#     airline: AirlineUpdate,
+#     session: SessionDep,
+#     current_user: Annotated[User, Depends(get_current_active_user)],
+# ):
+#     if not current_user:
+#         raise HTTPException(status_code=401, detail="Please login")
+
+#     if current_user.role != "Global Admin":
+#         raise HTTPException(status_code=403, detail="Permission denied")
+
+#     stored_airline = session.get(Airline, id)
+#     if not stored_airline:
+#         raise HTTPException(status_code=404, detail="Airline not found")
+
+#     update_data = airline.model_dump(exclude_unset=True)
+#     for key, value in update_data.items():
+#         setattr(stored_airline, key, value)
+
+#     session.add(stored_airline)
+#     session.commit()
+#     session.refresh(stored_airline)
+#     return stored_airline

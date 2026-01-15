@@ -10,7 +10,7 @@ from pwdlib import PasswordHash
 from sqlmodel import Session, select
 
 from app.config import get_settings
-from authentication.models import User
+from models.authentication import User
 from db import engine
 
 password_hash = PasswordHash.recommended()

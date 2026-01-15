@@ -5,9 +5,8 @@ from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
 from app.config import get_settings
-from common.models import *  # noqa: F403
-from authentication.models import *  # noqa: F403
-from flights.models import *  # noqa: F403
+
+from models import *  # noqa: F403
 
 settings = get_settings()
 
@@ -82,4 +81,5 @@ def run_migrations_online() -> None:
 if context.is_offline_mode():
     run_migrations_offline()
 else:
+    run_migrations_online()
     run_migrations_online()

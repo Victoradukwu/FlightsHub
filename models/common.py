@@ -1,3 +1,5 @@
+from __future__ import annotations  # noqa: F404
+
 from datetime import datetime, timezone
 
 from sqlmodel import Field, MetaData, SQLModel
@@ -29,3 +31,4 @@ class TimestampMixin(SQLModel):
         nullable=False,
         sa_column_kwargs={"onupdate": utcnow},
     )
+

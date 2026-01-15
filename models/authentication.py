@@ -1,18 +1,18 @@
-from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Annotated, Any, Literal, Optional
+from typing import Annotated, Any, Optional
 
 from annotated_types import MinLen
 from fastapi import Form
 from fastapi.exceptions import RequestValidationError
 from pwdlib import PasswordHash
-from pydantic import AfterValidator, BaseModel, EmailStr, ValidationError, model_validator
+from pydantic import (AfterValidator, BaseModel, EmailStr, ValidationError,
+                      model_validator)
 from sqlalchemy import Column, String
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
-from common.models import TimestampMixin
+from .common import TimestampMixin
 
 password_hash = PasswordHash.recommended()
 def _hash(val: str) -> str:
@@ -123,15 +123,11 @@ class UserOut(BaseModel):
     username: str
     email: EmailStr
     phone_number: str
-    status: Literal["Active", "Inactive"]
+    status: str
     role: str
     avatar: Optional[str]
     created_at: datetime
     updated_at: datetime
-
-    @property
-    def full_name(self) -> str:
-        return f"{self.first_name} {self.last_name}"
 
 
 class UserRole(str, Enum):
@@ -145,8 +141,9 @@ class User(UserBaseMixin, TimestampMixin, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     password: str
     avatar: str
-    status: Optional[str] = Field(default="Active")
-    role: Optional[UserRole] = Field(default=UserRole.PASSENGER, sa_column=Column(String, nullable=False) )
+    status: str = Field(default="Active")
+    role: UserRole  = Field(default=UserRole.PASSENGER, sa_column=Column(String, nullable=False))
+    airlines: list['Airline'] = Relationship(back_populates="admin")  # pyright: ignore[reportUndefinedVariable] # noqa: F821
 
 
 class Token(BaseModel):
