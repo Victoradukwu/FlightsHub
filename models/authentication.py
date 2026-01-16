@@ -1,6 +1,6 @@
 
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Any, Optional
 
 from annotated_types import MinLen
@@ -130,7 +130,7 @@ class UserOut(BaseModel):
     updated_at: datetime
 
 
-class UserRole(str, Enum):
+class UserRole(StrEnum):
     GLOBAL_ADMIN = "Global Admin"
     AIRLINE_ADMIN = "Airline Admin"
     PASSENGER = "Passenger"

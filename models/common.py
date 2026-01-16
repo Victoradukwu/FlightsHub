@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from enum import Enum
+from enum import StrEnum
 
 from sqlalchemy import Column
 from sqlalchemy import Enum as SAEnum
@@ -33,7 +33,7 @@ class TimestampMixin(SQLModel):
         sa_column_kwargs={"onupdate": utcnow},
     )
 
-class AdminStatus(str, Enum):
+class AdminStatus(StrEnum):
     ACTIVE = "Active"
     INACTIVE = "Inactive"
 
