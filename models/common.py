@@ -1,8 +1,9 @@
-from __future__ import annotations  # noqa: F404
-
 from datetime import datetime, timezone
+from enum import Enum
 
-from sqlmodel import Field, MetaData, SQLModel
+from sqlalchemy import Column
+from sqlalchemy import Enum as SAEnum
+from sqlmodel import Field, MetaData, Relationship, SQLModel
 
 convention = {
     "ix": "ix_%(column_0_label)s",
@@ -32,3 +33,16 @@ class TimestampMixin(SQLModel):
         sa_column_kwargs={"onupdate": utcnow},
     )
 
+class AdminStatus(str, Enum):
+    ACTIVE = "Active"
+    INACTIVE = "Inactive"
+
+
+class AirlineAdminLink(TimestampMixin, table=True):
+    user_id: int | None = Field(foreign_key="users.id", primary_key=True)
+    airline_id: int | None = Field(foreign_key="airline.id", primary_key=True)
+    status: AdminStatus = Field(
+        default=AdminStatus.ACTIVE, sa_column=Column(SAEnum(AdminStatus, name="admin_status"), nullable=False)
+    )
+    user: "User" = Relationship(back_populates="airline_links")  # pyright: ignore[reportUndefinedVariable] # noqa: F821
+    airline: "Airline" = Relationship(back_populates="admin_links")  # pyright: ignore[reportUndefinedVariable]  # noqa: F821

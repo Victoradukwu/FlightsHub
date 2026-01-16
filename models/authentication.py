@@ -12,7 +12,7 @@ from pydantic import (AfterValidator, BaseModel, EmailStr, ValidationError,
 from sqlalchemy import Column, String
 from sqlmodel import Field, Relationship, SQLModel
 
-from .common import TimestampMixin
+from .common import AirlineAdminLink, TimestampMixin
 
 password_hash = PasswordHash.recommended()
 def _hash(val: str) -> str:
@@ -143,7 +143,8 @@ class User(UserBaseMixin, TimestampMixin, table=True):
     avatar: str
     status: str = Field(default="Active")
     role: UserRole  = Field(default=UserRole.PASSENGER, sa_column=Column(String, nullable=False))
-    airlines: list['Airline'] = Relationship(back_populates="admin")  # pyright: ignore[reportUndefinedVariable] # noqa: F821
+    airlines: list["Airline"] = Relationship(back_populates="admins", link_model=AirlineAdminLink)  # pyright: ignore[reportUndefinedVariable] # noqa: F821
+    airline_links: list["AirlineAdminLink"] = Relationship(back_populates="user")
 
 
 class Token(BaseModel):

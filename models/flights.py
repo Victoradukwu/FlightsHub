@@ -6,9 +6,7 @@ from pydantic_extra_types.timezone_name import (TimeZoneName,
                                                 timezone_name_settings)
 from sqlmodel import Field, Relationship, SQLModel
 
-from models.authentication import User, UserOut
-
-from .common import TimestampMixin
+from .common import AirlineAdminLink, TimestampMixin
 
 
 @timezone_name_settings(strict=False)
@@ -63,13 +61,13 @@ class AirlineUpdate(SQLModel):
     admins: list[int] = Field(default=[])
     
 
-class AirlineOut(SQLModel):
+class AirlineOut(BaseModel):
     id: int
     airline_name: str
     email: str
     contact_phone: str
     icao_code: str
-    admin: UserOut
+    admins: list["UserOut"]  # pyright: ignore[reportUndefinedVariable] # noqa: F821
 
 
 class Airline(TimestampMixin, table=True):
@@ -78,5 +76,5 @@ class Airline(TimestampMixin, table=True):
     email: str = Field(unique=True)
     contact_phone: str = Field(unique=True)
     icao_code: str = Field(unique=True)
-    admin_id: Optional[int] = Field(foreign_key="users.id", default=None)
-    admin: Optional['User'] = Relationship(back_populates="airlines") # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+    admins: list["User"] = Relationship(back_populates="airlines", link_model=AirlineAdminLink)  # pyright: ignore[reportUndefinedVariable] # noqa: F821
+    admin_links: list[AirlineAdminLink] = Relationship(back_populates="airline")
