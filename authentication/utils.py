@@ -52,7 +52,7 @@ def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes
     return encoded_jwt
 
 
-async def get_current_user(credentials: Annotated[HTTPAuthorizationCredentials, Security(bearer_scheme)]):
+def get_current_user(credentials: Annotated[HTTPAuthorizationCredentials, Security(bearer_scheme)]):
     """returns the currently logged in user"""
     token = credentials.credentials
     credentials_exception = HTTPException(
@@ -73,7 +73,7 @@ async def get_current_user(credentials: Annotated[HTTPAuthorizationCredentials, 
     return user
 
 
-async def get_current_active_user(current_user: Annotated[User, Depends(get_current_user)]):
+def get_current_active_user(current_user: Annotated[User, Depends(get_current_user)]):
     """Returns the currently logged in user, if they are `active`"""
     if current_user.status == 'Inactive':
         raise HTTPException(status_code=400, detail="Inactive user")

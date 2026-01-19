@@ -10,9 +10,8 @@ Simple FastAPI project for managing flights and common endpoints.
 1. Clone directory
 2. Create a file called local.env inside the app directory and populate it with the content of the sample.env file in the project root directory. Update the file accordingly
 3. Run command: “uv sync”. To install packages
-4. Run command: “docker build -t flightshub . “ to build docker image
-5. Run command: “docker run -p 8000:8000 flightshub” to spin up a container from the image
-6. Run command: “uv run pytest” to ru. The automated tests
+4. Run command: “docker compose --env-file app/local.env up
+5. Run command: “uv run pytest” to ru. The automated tests
 
 ### Development (fast reload) ✅
 

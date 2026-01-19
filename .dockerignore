@@ -1,0 +1,44 @@
+# Python specific
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Dependency management (optional, as you usually copy requirements.txt)
+# If you use a lock file you might want to add it here, e.g.:
+# requirements.txt 
+
+# Build and distribution
+dist/
+build/
+*.egg-info/
+
+# Version control
+.git/
+.gitignore
+
+# Environment variables
+.env
+.env.*
+
+# Testing and editor files
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*,cover
+*.log
+.cache/
+.vscode/  # VS Code specific settings
+
+# OS and misc files
+*.swp
+*.bak
+*.tmp

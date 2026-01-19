@@ -7,6 +7,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     DATABASE_URL: str
     TEST_DATABASE_URL: str
+    DB_USER: str
+    DB_PASSWORD: str
+    DB_NAME: str
+    PGADMIN_EMAIL: str
+    PGADMIN_PASSWORD: str
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     EMAIL_ADDRESS: str

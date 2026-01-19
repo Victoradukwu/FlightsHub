@@ -1,5 +1,6 @@
 import os
 
+from dotenv import load_dotenv
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -9,6 +10,8 @@ from common.router import router as common_router
 from flights.router import router as flight_router
 
 from . import middlewares
+
+load_dotenv()
 
 api_v1_router = APIRouter(prefix="/api/v1")
 

@@ -22,7 +22,7 @@ router = APIRouter(
 
 
 @router.post("/airports/", response_model=Airport)
-async def create_airport(
+def create_airport(
     port: AirportBase, session: SessionDep, current_user: Annotated[User, Depends(get_current_active_user)]
 ):
     if not current_user or current_user.role != "Global Admin":
@@ -40,7 +40,7 @@ async def create_airport(
 
 
 @router.get("/airports/", response_model=list[Airport])
-async def list_airports(
+def list_airports(
     session: SessionDep,
     q: Annotated[str | None, Query(max_length=10)] = None,
 ):
@@ -56,7 +56,7 @@ async def list_airports(
 
 
 @router.get("/airports/{id}/")
-async def airport_retrieve(id: Annotated[int, Path(title="The Airport id")], session: SessionDep) -> Airport:
+def airport_retrieve(id: Annotated[int, Path(title="The Airport id")], session: SessionDep) -> Airport:
     band = session.get(Airport, id)
     if band is None:
         raise HTTPException(status_code=404, detail="Airport Not found")
@@ -64,7 +64,7 @@ async def airport_retrieve(id: Annotated[int, Path(title="The Airport id")], ses
 
 
 @router.patch("/airports/{id}/", response_model=Airport)
-async def update_airport(
+def update_airport(
     id: int, port: AirportUpdate, session: SessionDep, current_user: Annotated[User, Depends(get_current_active_user)]
 ):
     if not current_user:
@@ -88,7 +88,7 @@ async def update_airport(
 
 
 @router.post("/airlines/", response_model=Airline)
-async def create_airline(
+def create_airline(
     airline: AirlineUpdate, session: SessionDep, current_user: Annotated[User, Depends(get_current_active_user)]
 ):
     if not current_user or current_user.role != "Global Admin":
@@ -112,7 +112,7 @@ async def create_airline(
 
 
 @router.get("/airlines/", response_model=list[AirlineOut])
-async def list_airlines(
+def list_airlines(
     session: SessionDep,
     name: Annotated[str | None, Query(max_length=10)] = None,
 ):
@@ -130,7 +130,7 @@ async def list_airlines(
 
 
 @router.get("/airlines/{id}/", response_model=AirlineOut)
-async def airline_retrieve(id: Annotated[int, Path(title="The Airline id")], session: SessionDep):
+def airline_retrieve(id: Annotated[int, Path(title="The Airline id")], session: SessionDep):
     airline = session.get(Airline, id)
     if airline is None:
         raise HTTPException(status_code=404, detail="Airline Not found")
@@ -138,7 +138,7 @@ async def airline_retrieve(id: Annotated[int, Path(title="The Airline id")], ses
 
 
 @router.patch("/airlines/{id}/", response_model=AirlineOut)
-async def update_airline(
+def update_airline(
     id: int,
     airline: AirlineUpdate,
     session: SessionDep,

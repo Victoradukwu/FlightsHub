@@ -33,7 +33,7 @@ router = APIRouter(
 
 
 @router.post("/register/", response_model=UserOut)
-async def register(
+def register(
     request: Request,
     session: SessionDep,
     user: UserCreate = Depends(UserCreate.as_form),
@@ -49,7 +49,7 @@ async def register(
 
     # Save file under uploads/medias/avatars/<uuid>.<ext>
     if avatar:
-        file_path = await file_upload(avatar, model_name="users")
+        file_path = file_upload(avatar, model_name="users")
 
         # Build a full URL to the saved file using the mounted static route name 'uploads' if request available
         url = request.url_for("uploads", path=file_path) if request is not None else f"/uploads/{file_path}"
@@ -69,7 +69,7 @@ async def register(
 
 
 @router.post("/token/")
-async def login_for_access_token(
+def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
     user = authenticate_user(form_data.username, form_data.password)
@@ -86,12 +86,12 @@ async def login_for_access_token(
 
 
 @router.get("/users/me/", response_model=UserOut)
-async def read_users_me(current_user: Annotated[User, Depends(get_current_active_user)]):
+def read_users_me(current_user: Annotated[User, Depends(get_current_active_user)]):
     return current_user
 
 
 @router.post("/password/change/")
-async def change_password(
+def change_password(
     user: PasswordChange, current_user: Annotated[User, Depends(get_current_active_user)], session: SessionDep
 ):
     if verify_password(user.old_password, current_user.password):
@@ -103,7 +103,7 @@ async def change_password(
 
 
 @router.get("/password/request-reset/")
-async def reset_password(username: str, background_tasks: BackgroundTasks):
+def reset_password(username: str, background_tasks: BackgroundTasks):
     user = get_user(username=username)
     if user:
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -132,7 +132,7 @@ async def reset_password(username: str, background_tasks: BackgroundTasks):
 
 
 @router.post("/password/complete-reset/")
-async def reset_password_complete(data: PasswordReset, session: SessionDep):
+def reset_password_complete(data: PasswordReset, session: SessionDep):
     token = data.token
 
     try:
