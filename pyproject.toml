@@ -20,6 +20,7 @@ dependencies = [
     "python-multipart>=0.0.21",
     "sqlalchemy==2.0.45",
     "sqlmodel>=0.0.27",
+    "strawberry-graphql[fastapi]>=0.289.2",
     "testcontainers[postgresql]>=4.13.3",
     "tzdata>=2025.3",
     "uvicorn>=0.38.0",

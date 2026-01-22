@@ -5,6 +5,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from app_graphql.router import graphql_router
 from authentication.router import router as auth_router
 from common.router import router as common_router
 from flights.router import router as flight_router
@@ -37,3 +38,4 @@ app.add_middleware(
 app.middleware("http")(middlewares.add_process_time_header)
 
 app.include_router(api_v1_router)
+app.include_router(graphql_router, prefix="/graphql")

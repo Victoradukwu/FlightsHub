@@ -1,4 +1,3 @@
-
 .
 ├── Dockerfile
 ├── README.md
@@ -9,29 +8,57 @@
 │   ├── config.py
 │   ├── dependencies.py
 │   ├── exceptions.py
+│   ├── graphql.py
 │   ├── local.env
 │   └── middlewares.py
 ├── authentication
 │   ├── __init__.py
-│   ├── models.py
 │   ├── router.py
 │   └── utils.py
 ├── common
 │   ├── __init__.py
-│   ├── models.py
 │   ├── router.py
 │   └── utils.py
 ├── db.py
+├── docker-compose.yml
+├── entrypoint.sh
 ├── flights
 │   ├── __init__.py
-│   ├── models.py
 │   └── router.py
+├── graphql
+│   ├── __init__.py
+│   ├── context.py
+│   ├── mutations
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   └── flights.py
+│   ├── permissions
+│   ├── queries
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   └── flights.py
+│   ├── schema.py
+│   └── types
+│       ├── __init__.py
+│       ├── auth.py
+│       └── flights.py
 ├── migrations
 │   ├── README
+│   ├── __init__.py
 │   ├── env.py
 │   ├── script.py.mako
 │   └── versions
-│       └── a7a63f3582fc_initial_migration.py
+│       ├── 36038ca148d5_update_m2m_linkage.py
+│       ├── 6b40f5d4614a_reintroduce_the_m2m_btw_user_and_.py
+│       ├── 72c4d52a44d0_drop_link_table.py
+│       ├── 9096ec9e1fd8_convert_m2m_to_fk_between_airline_and_.py
+│       ├── a0bed39fa093_update.py
+│       └── a1a716248018_major_refactor.py
+├── models
+│   ├── __init__.py
+│   ├── authentication.py
+│   ├── common.py
+│   └── flights.py
 ├── pyproject.toml
 ├── sample.env
 ├── tests
@@ -45,5 +72,3 @@
 │   │       └── dd0f968ed15745fd96eba1c500afcf8a.jpg
 │   └── mediasusers
 └── uv.lock
-
-11 directories, 34 files

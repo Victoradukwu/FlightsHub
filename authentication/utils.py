@@ -3,19 +3,18 @@ from typing import Annotated, Optional
 
 import jwt
 from fastapi import Depends, HTTPException, Security, status
-from fastapi.security import (HTTPAuthorizationCredentials, HTTPBearer,
-                              OAuth2PasswordBearer)
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt.exceptions import InvalidTokenError
 from pwdlib import PasswordHash
 from sqlmodel import Session, select
 
 from app.config import get_settings
-from models.authentication import User
 from db import engine
+from models.authentication import User
 
 password_hash = PasswordHash.recommended()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token/")
 bearer_scheme = HTTPBearer()
+bearer_scheme_optional = HTTPBearer(auto_error=False)
 settings = get_settings()
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
@@ -70,6 +69,28 @@ def get_current_user(credentials: Annotated[HTTPAuthorizationCredentials, Securi
     user = get_user(username=username)
     if user is None:
         raise credentials_exception
+    return user
+
+def get_current_user_optional(
+    credentials: Annotated[Optional[HTTPAuthorizationCredentials], Security(bearer_scheme_optional)] = None,
+):
+    """returns the currently logged in user. If User is not logged in, return None"""
+    if not credentials:
+        return None
+    token = credentials.credentials
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+    except InvalidTokenError:
+        raise credentials_exception
+    user = get_user(username=username)
     return user
 
 
