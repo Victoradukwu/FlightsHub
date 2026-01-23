@@ -2,9 +2,17 @@ import strawberry
 from fastapi import HTTPException
 
 from app_graphql.permissions import IsAdminUser
-from models.flights import Airport
+from models.common import AirlineAdminLink
+from models.flights import Airline, Airport
 
-from ..types.flights import AirportInput, AirportType, AirportUpdateInput
+from ..types.flights import (
+    AirlineCreateInput,
+    AirlineType,
+    AirlineUpdateInput,
+    AirportInput,
+    AirportType,
+    AirportUpdateInput,
+)
 
 
 @strawberry.type
@@ -68,4 +76,73 @@ class AirportsMutation:
             time_zone=stored_port.time_zone,
             created_at=stored_port.created_at,
             updated_at=stored_port.updated_at,
+        )
+
+
+@strawberry.type
+class AirlinesMutation:
+    @strawberry.mutation(permission_classes=[IsAdminUser])
+    def create_airline(self, input: AirlineCreateInput, info: strawberry.Info) -> AirlineType:
+        """
+        Creates a new airline record in the system.
+        """
+        session = info.context["session"]
+        airline = Airline(
+            airline_name=input.airline_name,
+            email=input.email,
+            contact_phone=input.contact_phone,
+            icao_code=input.icao_code,
+        )
+        session.add(airline)
+        for admin in input.admins:
+            lnk = AirlineAdminLink(user_id=admin, airline=airline)  # type: ignore
+            session.add(lnk)
+        try:
+            session.commit()
+            session.refresh(airline)
+        except Exception as exc_:
+            session.rollback()
+            raise HTTPException(detail=str(exc_), status_code=400)
+        return AirlineType(
+            id=airline.id,  # type: ignore
+            airline_name=airline.airline_name,
+            email=airline.email,
+            contact_phone=airline.contact_phone,
+            icao_code=airline.icao_code,
+            admins=airline.admins,
+            created_at=airline.created_at,
+            updated_at=airline.updated_at,
+        )
+
+    @strawberry.mutation(permission_classes=[IsAdminUser])
+    def update_airline(self, id: strawberry.ID, input: AirlineUpdateInput, info: strawberry.Info) -> AirlineType:
+        """
+        Updates an airline record in the system.
+        """
+        session = info.context["session"]
+        stored_airline = session.get(Airline, id)
+        if not stored_airline:
+            raise HTTPException(status_code=404, detail="Airline not found")
+
+        input_dict = strawberry.asdict(input)
+        for key, value in input_dict.items():
+            if value is not None:
+                setattr(stored_airline, key, value)
+
+        session.add(stored_airline)
+        try:
+            session.commit()
+            session.refresh(stored_airline)
+        except Exception as exc_:
+            session.rollback()
+            raise HTTPException(detail=str(exc_), status_code=400)
+        return AirlineType(
+            id=stored_airline.id,  # type: ignore
+            airline_name=stored_airline.airline_name,
+            email=stored_airline.email,
+            contact_phone=stored_airline.contact_phone,
+            icao_code=stored_airline.icao_code,
+            admins=stored_airline.admins,
+            created_at=stored_airline.created_at,
+            updated_at=stored_airline.updated_at,
         )

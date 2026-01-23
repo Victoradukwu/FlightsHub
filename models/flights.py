@@ -45,14 +45,6 @@ class Airport(AirportBase, TimestampMixin, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
 
-# class AirlineAdminLink(TimestampMixin, table=True):
-#     user_id: int = Field(foreign_key="users.id", primary_key=True)
-#     airline_id: int = Field(foreign_key="airline.id", primary_key=True)
-#     status: str = Field(default="Active")
-#     user: Optional["User"] = Relationship(back_populates="airlineadmin_links")
-#     airline: "Airline" = Relationship(back_populates="airlineadmin_links")
-
-
 class AirlineUpdate(SQLModel):
     airline_name: Optional[str] = Field(default=None)
     email: Optional[str] = Field(default=None)
