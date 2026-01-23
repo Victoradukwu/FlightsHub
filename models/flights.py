@@ -76,5 +76,9 @@ class Airline(TimestampMixin, table=True):
     email: str = Field(unique=True)
     contact_phone: str = Field(unique=True)
     icao_code: str = Field(unique=True)
-    admins: list["User"] = Relationship(back_populates="airlines", link_model=AirlineAdminLink)  # pyright: ignore[reportUndefinedVariable] # noqa: F821
+    admins: list["User"] = Relationship(  # noqa: F821 # type: ignore
+        back_populates="airlines",
+        link_model=AirlineAdminLink,
+        sa_relationship_kwargs={"viewonly": True},
+    )  # pyright: ignore[reportUndefinedVariable]
     admin_links: list[AirlineAdminLink] = Relationship(back_populates="airline")

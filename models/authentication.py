@@ -64,7 +64,7 @@ class UserCreate(UserBaseMixin, PasswordMixin):  # type: ignore
         """Helper to receive model data from form fields (for multipart/form-data endpoints)."""
         try:
             return cls(
-                first_name=first_name,
+                first_name=first_name,  # type: ignore
                 last_name=last_name,
                 username=username,
                 email=email,
@@ -73,12 +73,7 @@ class UserCreate(UserBaseMixin, PasswordMixin):  # type: ignore
                 confirm_password=confirm_password,
             )
         except ValidationError as exc:
-            # Convert Pydantic ValidationError into FastAPI RequestValidationError so it is handled
-            # by the framework and returns a 422 Unprocessable Entity instead of 500
-            # Pydantic v1 ValidationError has `raw_errors`; pydantic v2 (pydantic-core) provides `errors()`
-            errors = getattr(exc, "raw_errors", None)
-            if errors is None:
-                errors = exc.errors()
+            errors = exc.errors()
             raise RequestValidationError(errors)
 
 
@@ -143,7 +138,11 @@ class User(UserBaseMixin, TimestampMixin, table=True):
     avatar: str
     status: str = Field(default="Active")
     role: UserRole  = Field(default=UserRole.PASSENGER, sa_column=Column(String, nullable=False))
-    airlines: list["Airline"] = Relationship(back_populates="admins", link_model=AirlineAdminLink)  # pyright: ignore[reportUndefinedVariable] # noqa: F821
+    airlines: list["Airline"] = Relationship(  # type: ignore  # noqa: F821
+        back_populates="admins",
+        link_model=AirlineAdminLink,
+        sa_relationship_kwargs={"viewonly": True},
+    )  # pyright: ignore[reportUndefinedVariable]
     airline_links: list["AirlineAdminLink"] = Relationship(back_populates="user")
 
 
