@@ -7,10 +7,7 @@ from authentication.utils import get_current_active_user, get_settings
 from db import SessionDep
 from models.authentication import User
 from models.common import AdminStatus, AirlineAdminLink
-from models.flights import Airline  # noqa: F401
-from models.flights import AirlineOut  # noqa: F401
-from models.flights import AirlineUpdate  # noqa: F401
-from models.flights import Airport, AirportBase, AirportUpdate
+from models.flights import Airline, AirlineOut, AirlineUpdate, Airport, AirportBase, AirportUpdate
 
 settings = get_settings()
 
