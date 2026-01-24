@@ -30,3 +30,14 @@ class AirlinesQuery:
     def airline(self, id: strawberry.ID, info: strawberry.Info) -> Optional[AirlineType]:
         session = info.context["session"]
         return session.get(Airline, id)
+
+
+@strawberry.type
+class FlightsMgtQuery:
+    @strawberry.field
+    def airports_query(self) -> AirportsQuery:
+        return AirportsQuery()
+
+    @strawberry.field
+    def airlines_query(self) -> AirlinesQuery:
+        return AirlinesQuery()

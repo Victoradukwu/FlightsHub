@@ -146,3 +146,14 @@ class AirlinesMutation:
             created_at=stored_airline.created_at,
             updated_at=stored_airline.updated_at,
         )
+
+
+@strawberry.type
+class FlightsMgtMutation:
+    @strawberry.field
+    def airports_mutation(self) -> AirportsMutation:
+        return AirportsMutation()
+
+    @strawberry.field
+    def airlines_mutation(self) -> AirlinesMutation:
+        return AirlinesMutation()
