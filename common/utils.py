@@ -12,7 +12,7 @@ from app.config import get_settings
 settings = get_settings()
 
 
-async def file_upload(file: UploadFile, model_name: Optional[str] = None) -> str:
+def file_upload(file: UploadFile, model_name: Optional[str] = None) -> str:
     """
     Save an UploadFile into uploads/medias[/<model_name>]/<uuid>.<ext>
     Returns the path relative to the uploads directory that can be used
@@ -35,9 +35,9 @@ async def file_upload(file: UploadFile, model_name: Optional[str] = None) -> str
     file_path = Path(location) / filename
     dest_path = pth / filename
 
-    content = await file.read()
+    content = file.file.read()
     dest_path.write_bytes(content)
-    await file.close()
+    file.file.close()
 
     return str(file_path)
 

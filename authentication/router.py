@@ -52,11 +52,11 @@ def register(
         file_path = file_upload(avatar, model_name="users")
 
         # Build a full URL to the saved file using the mounted static route name 'uploads' if request available
-        url = request.url_for("uploads", path=file_path) if request is not None else f"/uploads/{file_path}"
+        url = str(request.url_for("uploads", path=file_path)) if request is not None else f"/uploads/{file_path}"
     else:
         url = ""
 
-    usr = User(**user.model_dump(), avatar=str(url))
+    usr = User(**user.model_dump(), avatar=url)
     session.add(usr)
     try:
         session.commit()

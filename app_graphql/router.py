@@ -18,4 +18,4 @@ async def get_context(session: SessionDep, current_user: Annotated[User, Depends
         "user": current_user,
     }
 
-graphql_router = GraphQLRouter(schema, context_getter=get_context)
+graphql_router = GraphQLRouter(schema, context_getter=get_context, multipart_uploads_enabled=True)

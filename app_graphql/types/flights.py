@@ -31,8 +31,6 @@ class AirportType:
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
-strawberry.type
-
 
 @strawberry.type
 class UserType:
