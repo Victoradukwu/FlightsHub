@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi.responses import JSONResponse
 from sqlmodel import func, select
 
 from authentication.utils import get_current_active_user, get_settings
@@ -17,7 +18,11 @@ from models.flights import (
     Flight,
     FlightCreate,
     FlightRead,
+    FlightSeat,
     FlightUpdate,
+    SeatRead,
+    SeatStatus,
+    validate_seat_number,
 )
 
 settings = get_settings()
@@ -277,3 +282,64 @@ def update_flight(
     session.commit()
     session.refresh(stored_flight)
     return stored_flight
+
+
+@router.post("/flights/{id}/seats", response_model=list[SeatRead])
+def create_flight_seats(
+    id: int, seats: list[str], session: SessionDep, current_user: Annotated[User, Depends(get_current_active_user)]
+):
+    flight = session.get(Flight, id)
+    if not flight:
+        raise HTTPException(status_code=404, detail="Flight not found")
+    if not current_user or not (current_user.role == "Global Admin" or current_user in flight.airline.admins):
+        raise HTTPException(status_code=403, detail="Permission denied")
+
+    for seat in seats:
+        if not validate_seat_number(seat):
+            raise HTTPException(status_code=400, detail=f"{seat} is not in the right format")
+        else:
+            st = FlightSeat(flight_id=flight.id, seat_number=seat)  # type: ignore
+            session.add(st)
+
+    try:
+        session.commit()
+    except Exception as exc_:
+        session.rollback()
+        raise HTTPException(detail=str(exc_), status_code=400)
+    created_seats = session.exec(select(FlightSeat).where(FlightSeat.flight_id == flight.id))
+    return created_seats
+
+
+@router.get("/flights/{id}/seats", response_model=list[SeatRead])
+def get_flight_seats(id: int, session: SessionDep, current_user: Annotated[User, Depends(get_current_active_user)]):
+    flight = session.get(Flight, id)
+    if not flight:
+        raise HTTPException(status_code=404, detail="Flight not found")
+
+    flight_seats = session.exec(select(FlightSeat).where(FlightSeat.flight_id == flight.id))
+    return flight_seats
+
+
+@router.post("/flights/{id}/reserve_seats", response_model=list[SeatRead])
+def reserve_flight_seats(
+    id: int, seats: list[int], session: SessionDep, current_user: Annotated[User, Depends(get_current_active_user)]
+):
+    flight = session.get(Flight, id)
+    if not flight:
+        raise HTTPException(status_code=404, detail="Flight not found")
+    if not current_user or not (current_user.role == "Global Admin" or current_user in flight.airline.admins):
+        raise HTTPException(status_code=403, detail="Permission denied")
+
+    for seat in seats:
+        st = session.get(FlightSeat, seat)
+        if not st:
+            raise HTTPException(status_code=404, detail=f"Seat {seat} not found")
+        st.status = SeatStatus.BOOKED
+        session.add(st)
+
+    try:
+        session.commit()
+    except Exception as exc_:
+        session.rollback()
+        raise HTTPException(detail=str(exc_), status_code=400)
+    return JSONResponse(content="Request successful")

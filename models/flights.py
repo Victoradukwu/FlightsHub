@@ -7,7 +7,7 @@ from pydantic import BaseModel, field_validator
 from pydantic_extra_types.timezone_name import (TimeZoneName,
                                                 timezone_name_settings)
 from sqlalchemy import Column, String
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
 from .common import AirlineAdminLink, TimestampMixin
 
@@ -143,6 +143,7 @@ class Flight(TimestampMixin, table=True):
     departure_port: Airport = Relationship(
         back_populates="outgoing_flights", sa_relationship_kwargs={"foreign_keys": "[Flight.departure_port_id]"}
     )
+    seats: list["FlightSeat"] = Relationship(back_populates="flight")
 
 
 class FlightRead(BaseModel):
@@ -156,3 +157,56 @@ class FlightRead(BaseModel):
     airline: Airline | None
     destination_port: Airport | None
     departure_port: Airport | None
+
+
+class SeatStatus(StrEnum):
+    BOOKED = "Booked"
+    AVAILABLE = "Available"
+
+
+class FlightSeat(TimestampMixin, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    flight_id: int = Field(foreign_key="flight.id")
+    seat_number: str
+    status: SeatStatus = Field(default=SeatStatus.AVAILABLE, sa_column=Column(String, nullable=False))
+    flight: Flight = Relationship(back_populates="seats")
+
+    __table_args__ = (UniqueConstraint("flight_id", "seat_number", name="unique_flight_seat_unique"),)
+
+    @field_validator("seat_number")
+    def validate_seat_number(cls, v: str) -> str:
+        """
+        Validates that flight_number is between 1 and 9999.
+        """
+        seat_letters = ["A", "B", "C", "D", "E", "F", "G"]
+        alpha_ = v[-1]
+        num_ = v[: len(v) - 1]
+        if alpha_ not in seat_letters or not (1 <= int(num_) <= 999):
+            raise ValueError(f"Seat number should comprise a number (1-999), followed by a letter from {seat_letters}")
+        return v
+
+
+class SmallFlight(BaseModel):
+    id: int
+    flight_number: str
+
+
+class SeatRead(BaseModel):
+    id: int
+    seat_number: str
+    status: str
+    flight: SmallFlight
+
+
+def validate_seat_number(v: str) -> bool:
+    """
+    Validates that flight_number is between 1 and 9999.
+    """
+    seat_letters = ["A", "B", "C", "D", "E", "F", "G"]
+    alpha_ = v[-1]
+    num_ = v[: len(v) - 1]
+    if not num_.isdigit():
+        return False
+    if alpha_ not in seat_letters or not (1 <= int(num_) <= 999):
+        return False
+    return True
