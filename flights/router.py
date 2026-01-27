@@ -1,13 +1,24 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
-from sqlmodel import select
+from sqlmodel import func, select
 
 from authentication.utils import get_current_active_user, get_settings
 from db import SessionDep
 from models.authentication import User
 from models.common import AdminStatus, AirlineAdminLink
-from models.flights import Airline, AirlineOut, AirlineUpdate, Airport, AirportBase, AirportUpdate
+from models.flights import (
+    Airline,
+    AirlineOut,
+    AirlineUpdate,
+    Airport,
+    AirportBase,
+    AirportUpdate,
+    Flight,
+    FlightCreate,
+    FlightRead,
+    FlightUpdate,
+)
 
 settings = get_settings()
 
@@ -173,3 +184,96 @@ def update_airline(
     session.commit()
     session.refresh(stored_airline)
     return stored_airline
+
+
+@router.post("/flights/", response_model=FlightRead)
+def create_flight(
+    flight: FlightCreate, session: SessionDep, current_user: Annotated[User, Depends(get_current_active_user)]
+):
+    airline = session.get(Airline, flight.airline_id)
+    if not airline:
+        raise HTTPException(status_code=404, detail="Airline does not exist")
+    if not current_user or not (current_user.role == "Global Admin" or current_user in airline.admins):
+        raise HTTPException(status_code=403, detail="Permission denied")
+
+    flight_number = f"{airline.icao_code}{flight.flight_number}"
+    existing_flight = session.exec(
+        select(Flight).where(
+            Flight.flight_number == flight_number,
+            func.date(Flight.date_time) == flight.date_time.date(),
+            Flight.departure_port_id == flight.departure_port_id,
+        )
+    ).first()
+    if existing_flight:
+        raise HTTPException(
+            status_code=400, detail="A flight with this number has alreadey been schedulled for this day"
+        )
+
+    flight_ = Flight(**flight.model_dump())
+    setattr(flight_, "flight_number", flight_number)
+    session.add(flight_)
+    try:
+        session.commit()
+        session.refresh(flight_)
+    except Exception as exc_:
+        session.rollback()
+        raise HTTPException(detail=str(exc_), status_code=400)
+    return flight_
+
+
+@router.get("/flights/", response_model=list[FlightRead])
+def list_flights(session: SessionDep):
+    return session.exec(select(Flight))
+
+
+@router.get("/flights/{id}/", response_model=FlightRead)
+def flight_retrieve(id: Annotated[int, Path(title="The Airport id")], session: SessionDep):
+    flight = session.get(Flight, id)
+    if flight is None:
+        raise HTTPException(status_code=404, detail="Airport Not found")
+    return flight
+
+
+@router.patch("/flights/{id}/", response_model=FlightRead)
+def update_flight(
+    id: int, flight: FlightUpdate, session: SessionDep, current_user: Annotated[User, Depends(get_current_active_user)]
+):
+    stored_flight = session.get(Flight, id)
+    if not stored_flight:
+        raise HTTPException(status_code=404, detail="Flight not found")
+    if not current_user or not (current_user.role == "Global Admin" or current_user in stored_flight.airline.admins):
+        raise HTTPException(status_code=403, detail="Permission denied")
+
+    try:
+        number_ = flight.flight_number or stored_flight.flight_number[3:]
+        dep = flight.departure_port_id or stored_flight.departure_port_id
+        if flight.date_time:
+            date_ = flight.date_time.date()
+        else:
+            date_ = stored_flight.date_time.date()
+    except Exception as exc:
+        raise exc
+    else:
+        flight_number = f"{stored_flight.airline.icao_code}{number_}"
+        existing_flight = session.exec(
+            select(Flight).where(
+                Flight.flight_number == flight_number,
+                func.date(Flight.date_time) == date_,
+                Flight.departure_port_id == dep,
+                Flight.id != id,
+            )
+        ).first()
+        if existing_flight:
+            raise HTTPException(
+                status_code=400, detail="A flight with this number has alreadey been schedulled for this day"
+            )
+
+    update_data = flight.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(stored_flight, key, value)
+    stored_flight.flight_number = flight_number
+
+    session.add(stored_flight)
+    session.commit()
+    session.refresh(stored_flight)
+    return stored_flight
