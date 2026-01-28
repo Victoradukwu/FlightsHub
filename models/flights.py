@@ -1,9 +1,10 @@
 
 from datetime import datetime
+from decimal import Decimal
 from enum import StrEnum
 from typing import Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, EmailStr, field_validator
 from pydantic_extra_types.timezone_name import (TimeZoneName,
                                                 timezone_name_settings)
 from sqlalchemy import Column, String
@@ -98,6 +99,7 @@ class FlightCreate(BaseModel):
     date_time: datetime
     departure_port_id: int
     destination_port_id: int
+    airfare: Decimal
 
     @field_validator("flight_number")
     def validate_flight_number(cls, v: int) -> int:
@@ -115,6 +117,7 @@ class FlightUpdate(BaseModel):
     date_time: datetime | None = Field(default=None)
     departure_port_id: int | None = Field(default=None)
     destination_port_id: int | None = Field(default=None)
+    airfare: Decimal | None = Field(default=None)
     status: FlightStatus | None = Field(default=None)
 
     @field_validator("flight_number")
@@ -134,6 +137,7 @@ class Flight(TimestampMixin, table=True):
     date_time: datetime
     departure_port_id: int | None = Field(foreign_key="airport.id")
     destination_port_id: int | None = Field(foreign_key="airport.id")
+    airfare: Decimal | None = Field(decimal_places=2, max_digits=10, default=None)
     status: FlightStatus = Field(default=FlightStatus.PENDING, sa_column=Column(String, nullable=False))
     # Convenient relationships
     airline: Airline = Relationship(back_populates="flights")
@@ -144,6 +148,7 @@ class Flight(TimestampMixin, table=True):
         back_populates="outgoing_flights", sa_relationship_kwargs={"foreign_keys": "[Flight.departure_port_id]"}
     )
     seats: list["FlightSeat"] = Relationship(back_populates="flight")
+    reservations: list["PassengerNameRecord"] = Relationship(back_populates="flight")
 
 
 class FlightRead(BaseModel):
@@ -157,6 +162,7 @@ class FlightRead(BaseModel):
     airline: Airline | None
     destination_port: Airport | None
     departure_port: Airport | None
+    airfare: Decimal | None
 
 
 class SeatStatus(StrEnum):
@@ -210,3 +216,84 @@ def validate_seat_number(v: str) -> bool:
     if alpha_ not in seat_letters or not (1 <= int(num_) <= 999):
         return False
     return True
+
+
+class ReservationStatus(StrEnum):
+    BOOKED = "Booked"
+    TICKETED = "Ticketed"
+    CANCELLED = "Cancelled"
+
+
+class PaymentInfo(BaseModel):
+    name: str
+    card_number: str
+    cvv: int
+    exp_month: str
+    exp_year: str
+
+
+class PassengerNameRecord(TimestampMixin, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    flight_id: int = Field(foreign_key="flight.id")
+    passenger_name: str
+    booking_reference: str | None = Field(default=None)
+    email: EmailStr
+    phone_number: str
+    seat_number: str
+    ticket_number: str | None = Field(default=None)
+    ticket_link: str | None = Field(default=None)
+    user_id: int | None = Field(foreign_key="users.id", default=None)
+    status: ReservationStatus = Field(default=ReservationStatus.BOOKED, sa_column=Column(String, nullable=False))
+    flight: Flight = Relationship(back_populates="reservations")
+    user: "User" = Relationship(back_populates="reservations")  # pyright: ignore[reportUndefinedVariable]  # noqa: F821
+
+    @property
+    def airline_name(self) -> str:
+        return self.flight.airline.airline_name
+
+    @property
+    def departure_port(self) -> str:
+        return self.flight.departure_port.airport_name
+
+    @property
+    def destination_port(self) -> str:
+        return self.flight.destination_port.airport_name
+
+    @property
+    def date_time(self) -> datetime:
+        return self.flight.date_time
+
+
+class PNRCreate(BaseModel):
+    flight_id: int
+    passenger_name: str
+    email: EmailStr
+    phone_number: str
+    seat_number: str
+    payment_info: PaymentInfo | None
+
+
+class PNRCUpdate(BaseModel):
+    flight_id: int | None
+    passenger_name: str | None
+    email: EmailStr | None
+    phone_number: str | None
+    seat_number: str | None
+    payment_info: PaymentInfo | None
+
+
+class PNRRead(BaseModel):
+    id: int
+    flight_id: int
+    passenger_name: str
+    booking_reference: str
+    email: EmailStr
+    phone_number: str
+    seat_number: str
+    ticket_number: str | None = Field(default=None)
+    ticket_link: str | None = Field(default=None)
+    status: str
+    airline_name: str
+    departure_port: str
+    destination_port: str
+    date_time: datetime

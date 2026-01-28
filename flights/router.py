@@ -1,12 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path, Query
 from fastapi.responses import JSONResponse
 from sqlmodel import func, select
 
 from authentication.utils import get_current_active_user, get_settings
 from db import SessionDep
-from models.authentication import User
+from flights.utils import generate_booking_ref, process_reservation
+from models.authentication import User, UserRole
 from models.common import AdminStatus, AirlineAdminLink
 from models.flights import (
     Airline,
@@ -20,6 +21,11 @@ from models.flights import (
     FlightRead,
     FlightSeat,
     FlightUpdate,
+    PassengerNameRecord,
+    PaymentInfo,
+    PNRCreate,
+    PNRRead,
+    ReservationStatus,
     SeatRead,
     SeatStatus,
     validate_seat_number,
@@ -324,6 +330,7 @@ def get_flight_seats(id: int, session: SessionDep, current_user: Annotated[User,
 def reserve_flight_seats(
     id: int, seats: list[int], session: SessionDep, current_user: Annotated[User, Depends(get_current_active_user)]
 ):
+    """Reserve seats without assigning passengers"""
     flight = session.get(Flight, id)
     if not flight:
         raise HTTPException(status_code=404, detail="Flight not found")
@@ -343,3 +350,83 @@ def reserve_flight_seats(
         session.rollback()
         raise HTTPException(detail=str(exc_), status_code=400)
     return JSONResponse(content="Request successful")
+
+
+@router.post("/reservations/", response_model=PNRRead)
+def create_reservation(
+    data: PNRCreate,
+    session: SessionDep,
+    background_tasks: BackgroundTasks,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+):
+    seat = session.exec(
+        select(FlightSeat).where(FlightSeat.seat_number == data.seat_number, FlightSeat.flight_id == data.flight_id)
+    ).first()
+    if seat:
+        seat.status = SeatStatus.BOOKED
+        session.add(seat)
+    data_dict = data.model_dump()
+    payment_info = data_dict.pop("payment_info")
+    data_dict["booking_reference"] = generate_booking_ref(data.flight_id, session=session)
+    rsv = PassengerNameRecord(**data_dict)
+    session.add(rsv)
+    try:
+        session.commit()
+        session.refresh(rsv)
+    except Exception as exc_:
+        session.rollback()
+        raise HTTPException(detail=str(exc_), status_code=400)
+    if rsv:
+        background_tasks.add_task(process_reservation, rsv.id, payment_info, session)  # type: ignore
+    return rsv
+
+
+@router.post("/reservations/{id}/pay")
+def pay_for_reservation(
+    id: int,
+    data: PaymentInfo,
+    session: SessionDep,
+    background_tasks: BackgroundTasks,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+):
+    rsv = session.get(PassengerNameRecord, id)
+    if not rsv:
+        raise HTTPException(status_code=404, detail="Reservation not found")
+    if not (
+        rsv.user_id == current_user.id
+        or current_user.role == UserRole.GLOBAL_ADMIN
+        or current_user in rsv.flight.airline.admins
+    ):
+        raise HTTPException(status_code=403, detail="Permission Denied")
+    payment_info = data.model_dump()
+    background_tasks.add_task(process_reservation, rsv.id, payment_info, session)  # type: ignore
+    return JSONResponse(content="Request is being processed. We will send a mail shortly")
+
+
+@router.post("/reservations/{id}/cancel")
+def cancel_reservation(
+    id: int,
+    session: SessionDep,
+    current_user: Annotated[User, Depends(get_current_active_user)],
+):
+    rsv = session.get(PassengerNameRecord, id)
+    if not rsv:
+        raise HTTPException(status_code=404, detail="Reservation not found")
+    if not (
+        current_user.id == rsv.user_id
+        or current_user.role == UserRole.GLOBAL_ADMIN
+        or current_user in rsv.flight.airline.admins
+    ):
+        raise HTTPException(status_code=403, detail="Permission Denied")
+    if rsv.status == ReservationStatus.TICKETED:
+        raise HTTPException(status_code=400, detail="The reservation is ticketed and cannot be cancelled")
+    seat = session.exec(
+        select(FlightSeat).where(FlightSeat.seat_number == rsv.seat_number, FlightSeat.flight_id == rsv.flight_id)
+    ).first()
+    if seat:
+        seat.status = SeatStatus.AVAILABLE
+        session.add(seat)
+    rsv.status = ReservationStatus.CANCELLED
+    session.add(rsv)
+    session.commit()
+    return JSONResponse(content="Reservation cancelled")

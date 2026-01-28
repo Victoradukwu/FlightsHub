@@ -12,6 +12,8 @@ from pydantic import (AfterValidator, BaseModel, EmailStr, ValidationError,
 from sqlalchemy import Column, String
 from sqlmodel import Field, Relationship, SQLModel
 
+from models.flights import PassengerNameRecord
+
 from .common import AirlineAdminLink, TimestampMixin
 
 password_hash = PasswordHash.recommended()
@@ -144,6 +146,7 @@ class User(UserBaseMixin, TimestampMixin, table=True):
         sa_relationship_kwargs={"viewonly": True},
     )  # pyright: ignore[reportUndefinedVariable]
     airline_links: list["AirlineAdminLink"] = Relationship(back_populates="user")
+    reservations: list["PassengerNameRecord"] = Relationship(back_populates="user")
 
 
 class Token(BaseModel):
