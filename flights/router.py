@@ -1,9 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path, Query, WebSocket
 from fastapi.responses import JSONResponse
 from sqlmodel import func, select
 
+from app.websocket_manager import manager
 from authentication.utils import get_current_active_user, get_settings
 from db import SessionDep
 from flights.utils import generate_booking_ref, process_reservation
@@ -28,6 +29,7 @@ from models.flights import (
     ReservationStatus,
     SeatRead,
     SeatStatus,
+    SmallFlight,
     validate_seat_number,
 )
 
@@ -318,6 +320,7 @@ def create_flight_seats(
 
 @router.get("/flights/{id}/seats", response_model=list[SeatRead])
 def get_flight_seats(id: int, session: SessionDep, current_user: Annotated[User, Depends(get_current_active_user)]):
+    """Returns all the seats for a given flight"""
     flight = session.get(Flight, id)
     if not flight:
         raise HTTPException(status_code=404, detail="Flight not found")
@@ -378,6 +381,17 @@ def create_reservation(
         raise HTTPException(detail=str(exc_), status_code=400)
     if rsv:
         background_tasks.add_task(process_reservation, rsv.id, payment_info, session)  # type: ignore
+        flight_seats = session.exec(select(FlightSeat).where(FlightSeat.flight_id == data.flight_id))
+        flight_seats = [
+            SeatRead(
+                id=st.id,  # type: ignore
+                seat_number=st.seat_number,
+                status=st.status,
+                flight=SmallFlight(id=st.flight.id, flight_number=st.flight.flight_number),  # type: ignore
+            )
+            for st in flight_seats
+        ]
+        background_tasks.add_task(manager.broadcast_seats, data.flight_id, flight_seats)
     return rsv
 
 
@@ -407,6 +421,7 @@ def pay_for_reservation(
 def cancel_reservation(
     id: int,
     session: SessionDep,
+    background_tasks: BackgroundTasks,
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
     rsv = session.get(PassengerNameRecord, id)
@@ -429,4 +444,25 @@ def cancel_reservation(
     rsv.status = ReservationStatus.CANCELLED
     session.add(rsv)
     session.commit()
+    flight_seats = session.exec(select(FlightSeat).where(FlightSeat.flight_id == rsv.flight_id))
+    flight_seats = [
+        SeatRead(
+            id=st.id,  # type: ignore
+            seat_number=st.seat_number,
+            status=st.status,
+            flight=SmallFlight(id=st.flight.id, flight_number=st.flight.flight_number),  # type: ignore
+        )
+        for st in flight_seats
+    ]
+    background_tasks.add_task(manager.broadcast_seats, rsv.flight_id, flight_seats)
     return JSONResponse(content="Reservation cancelled")
+
+
+@router.websocket("/ws/flights/{flight_id}/seats")
+async def websocket_seat_updates(websocket: WebSocket, flight_id: int):
+    await manager.connect(websocket, flight_id)
+    try:
+        while True:
+            await websocket.receive_text()
+    except Exception:
+        manager.disconnect(flight_id, websocket)

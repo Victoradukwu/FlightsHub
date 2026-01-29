@@ -24,6 +24,7 @@ dependencies = [
     "testcontainers[postgresql]>=4.13.3",
     "tzdata>=2025.3",
     "uvicorn>=0.38.0",
+    "websockets>=16.0",
 ]
 
 [dependency-groups]

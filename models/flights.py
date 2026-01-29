@@ -270,7 +270,7 @@ class PNRCreate(BaseModel):
     email: EmailStr
     phone_number: str
     seat_number: str
-    payment_info: PaymentInfo | None
+    payment_info: PaymentInfo | None = Field(default=None)
 
 
 class PNRCUpdate(BaseModel):
