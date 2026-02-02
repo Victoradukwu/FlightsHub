@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     DB_NAME: str
     PGADMIN_EMAIL: str
     PGADMIN_PASSWORD: str
+    REDIS_URL: str
+    CELERY_BROKER_URL: str
+    CELERY_RESULT_BACKEND: str
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     EMAIL_ADDRESS: str

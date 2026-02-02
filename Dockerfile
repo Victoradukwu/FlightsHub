@@ -8,7 +8,7 @@ WORKDIR /app
 
 # System deps for asyncpg / psycopg
 RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev \
-build-essential python3-dev curl bash && rm -rf /var/lib/apt/lists/*
+build-essential python3-dev curl bash supervisor && rm -rf /var/lib/apt/lists/*
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -26,5 +26,9 @@ COPY . .
 
 EXPOSE 8000
 
-# Run Alembic migrations, then start FastAPI
-CMD ["sh", "-c", "uv run alembic upgrade head && uv run uvicorn app:app --host 0.0.0.0 --port 8000"]
+# Create supervisord config to run migrations, FastAPI, and Celery
+RUN mkdir -p /etc/supervisor/conf.d
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Run migrations on startup, then start supervisor (FastAPI + Celery)
+CMD ["sh", "-c", "uv run alembic upgrade head && supervisord -c /etc/supervisor/conf.d/supervisord.conf"]

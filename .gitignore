@@ -17,3 +17,8 @@ uploads
 # Suspend testing for now
 
 /tests
+
+
+# Celery beat schedule files and PID file
+celerybeat-schedule*
+celerybeat.pid

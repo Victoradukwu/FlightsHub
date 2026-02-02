@@ -1,4 +1,25 @@
-# Python specific
+# Prevent host and local artifacts from entering Docker build context
+.git
+.gitignore
+.venv/
+.venv-1/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.pyo
+*.pyd
+*.log
+celerybeat-schedule*
+uploads/
+node_modules/
+dist/
+build/
+Dockerfile*
+docker-compose*.yml
+README.md
+*.env
+*.env.*
+sample.env# Python specific
 __pycache__
 *.pyc
 *.pyo

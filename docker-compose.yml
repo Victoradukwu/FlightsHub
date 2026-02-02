@@ -10,6 +10,7 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
+
   pgadmin:
     container_name: pgadmin
     image: dpage/pgadmin4
@@ -20,16 +21,29 @@ services:
       - 5050:80
     depends_on:
       - db
-  
+
+  redis:
+    image: redis:6-alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+
   flightshub:
     build: .
     container_name: fastapi_app
     depends_on:
       - db
+      - redis
     environment:
       DATABASE_URL: postgresql://victor:victor@db:5432/flightshub
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
     ports:
       - "8000:8000"
     volumes:
+      # Bind mount source, but mask /app/.venv with an anonymous volume
       - .:/app
+      - /app/.venv
     restart: always
