@@ -297,3 +297,35 @@ class PNRRead(BaseModel):
     departure_port: str
     destination_port: str
     date_time: datetime
+
+
+class AISearchRequest(BaseModel):
+    origin_iata: str
+    destination_iata: str
+    date: str = Field(description="Date string in iso format: YYYY-MM-DD")
+
+
+# class ExternalFlightRead(BaseModel):
+#     airline_name: str
+#     flight_number: str
+#     departure_time: str
+#     arrival_time: str | None
+#     departure_iata: str
+#     destination_iata: str
+#     airfare: str | None
+#     booking_url: str | None
+
+
+class ExternalFlight(BaseModel):
+    airline_name: str
+    flight_number: str
+    departure_time: datetime
+    arrival_time: datetime | None = None
+    departure_iata: str
+    destination_iata: str
+    airfare: Decimal | None = None
+    booking_url: str | None = None
+
+
+class ExternalFlightsResponse(BaseModel):
+    flights: list[ExternalFlight]

@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from enum import StrEnum
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,6 +22,14 @@ class Settings(BaseSettings):
     EMAIL_SENDER: str
     EMAIL_PASSWORD: str
     FE_PW_RESET_URL: str
+    # AI / GenAI settings
+    class AIProviderEnum(StrEnum):
+        OPENAI = "OPENAI"
+        MOCK = "MOCK"
+
+    AI_PROVIDER: AIProviderEnum | None = None
+    OPENAI_API_KEY: str | None = None
+    OPENAI_MODEL: str | None = None
     ALGORITHM: str = "HS256"
     app_name: str = "FlightsHub"
     model_config = SettingsConfigDict(env_file=str(Path(__file__).parent / "local.env"))

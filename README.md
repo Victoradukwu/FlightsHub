@@ -49,3 +49,39 @@ gunicorn -k uvicorn.workers.UvicornWorker -w 4 -b 0.0.0.0:8000 app.main:app
 ### GraphQL
 ### Websocket==Reservation created and cancelled (Updated seats)
 ### Background tasks
+
+---
+
+## GenAI Flight Search (REST)
+
+- Endpoint: `/api/v1/flights/search` (POST)
+- Purpose: Search flights between two airports for a given date using the internal database. Also returns external AI-suggested flights (GenAI) with booking links.
+- No auto-book: Results only; differentiate internal vs GenAI suggestions.
+
+### Request body
+
+```
+{
+	"origin_iata": "LOS",
+	"destination_iata": "ABV",
+	"date": "2026-02-02"
+}
+```
+
+### Response
+
+```
+{
+	"internal_flights": [ { /* internal flight info */ } ],
+	"external_flights": [ { /* GenAI suggestion with booking_url */ } ]
+}
+```
+
+### Provider switching (LangChain)
+
+- Configure in `app/local.env`:
+	- `AI_PROVIDER=MOCK` (default) or `OPENAI`
+	- `OPENAI_API_KEY=<your_key>`
+	- `OPENAI_MODEL=gpt-4.1-mini`
+
+When `AI_PROVIDER=OPENAI`, the app uses LangChain (`ChatOpenAI`) with structured output into the `ExternalFlightsResponse` Pydantic model. `MOCK` returns deterministic samples for development.

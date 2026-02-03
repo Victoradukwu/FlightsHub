@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path, Query, WebSocket
@@ -7,6 +8,7 @@ from sqlmodel import func, select
 from app.websocket_manager import manager
 from authentication.utils import get_current_active_user, get_settings
 from db import SessionDep
+from flights.ai_service import search_flights
 from flights.utils import generate_booking_ref, process_reservation
 from models.authentication import User, UserRole
 from models.common import AdminStatus, AirlineAdminLink
@@ -17,6 +19,8 @@ from models.flights import (
     Airport,
     AirportBase,
     AirportUpdate,
+    AISearchRequest,
+    ExternalFlight,
     Flight,
     FlightCreate,
     FlightRead,
@@ -466,3 +470,50 @@ async def websocket_seat_updates(websocket: WebSocket, flight_id: int):
             await websocket.receive_text()
     except Exception:
         manager.disconnect(flight_id, websocket)
+
+
+@router.post("/search")
+def ai_search(
+    payload: AISearchRequest,
+    session: SessionDep,
+):
+    try:
+        date_obj = datetime.fromisoformat(payload.date)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+
+    internal, external = search_flights(
+        session, payload.origin_iata.upper(), payload.destination_iata.upper(), date_obj
+    )
+
+    internal_flights = [
+        {
+            "id": f.id,
+            "flight_number": f.flight_number,
+            "airline": f.airline.airline_name if f.airline else None,
+            "date_time": f.date_time.isoformat(),
+            "departure_port": f.departure_port.full_name if f.departure_port else None,
+            "destination_port": f.destination_port.full_name if f.destination_port else None,
+            "airfare": str(f.airfare) if f.airfare is not None else None,
+        }
+        for f in internal
+    ]
+
+    external_flights: list[ExternalFlight] = [
+        ExternalFlight(
+            airline_name=x.airline_name,
+            flight_number=x.flight_number,
+            departure_time=x.departure_time,
+            arrival_time=x.arrival_time if x.arrival_time else None,
+            departure_iata=x.departure_iata,
+            destination_iata=x.destination_iata,
+            airfare=x.airfare,
+            booking_url=x.booking_url,
+        ).model_dump()
+        for x in external
+    ]  # type: ignore
+
+    return {
+        "internal_flights": internal_flights,
+        "external_flights": external_flights,
+    }
