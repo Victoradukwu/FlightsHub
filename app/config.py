@@ -1,7 +1,7 @@
+from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
 
-from enum import StrEnum
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -37,4 +37,9 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings():
-    return Settings() # type: ignore
+    return Settings()  # type: ignore
+
+
+# Helper to allow tests to reload settings after changing environment vars
+def reset_settings_cache():
+    get_settings.cache_clear()

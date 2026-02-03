@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -5,7 +6,6 @@ from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
 from app.config import get_settings
-
 from models import *  # noqa: F403
 
 settings = get_settings()
@@ -13,7 +13,10 @@ settings = get_settings()
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Prefer the test database when running under pytest
+is_pytest = bool(os.environ.get("PYTEST_CURRENT_TEST"))
+db_url = settings.TEST_DATABASE_URL if is_pytest else settings.DATABASE_URL
+config.set_main_option("sqlalchemy.url", db_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -81,5 +84,4 @@ def run_migrations_online() -> None:
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    run_migrations_online()
     run_migrations_online()

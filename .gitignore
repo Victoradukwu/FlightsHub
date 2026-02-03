@@ -16,7 +16,7 @@ uploads
 
 # Suspend testing for now
 
-/tests
+# /tests
 
 
 # Celery beat schedule files and PID file
