@@ -37,14 +37,17 @@ class OpenAIProvider(AIProvider):
         sys = SystemMessage(
             content=(
                 "You are a travel assistant. Return external flight options not in our system. "
-                "Use realistic carriers/routes. Only output the requested structure."
+                "Use realistic carriers/routes. Only output the requested structure. "
+                "For each flight, set booking_url to the airline's official website or direct booking page. "
+                "If no official site is known, set booking_url to null."
             )
         )
         usr = HumanMessage(
             content=(
                 "Provide up to 5 flights as a structured object. "
                 f"Origin: {origin_iata}. Destination: {destination_iata}. Date: {date}. "
-                "Fill ISO8601 times and booking_url when available."
+                "Times must be ISO8601. booking_url must be the airline's official website or booking page; "
+                "return null if unknown."
             )
         )
         try:
@@ -112,6 +115,7 @@ class HuggingFaceProvider(AIProvider):
                 "You are a travel assistant. Return external flight options not in our system. "
                 "Use realistic carriers/routes. Respond ONLY with a compact JSON object matching: "
                 '{"flights": [{"airline_name": string, "flight_number": string, "departure_time": ISO8601, "arrival_time": ISO8601|null, "departure_iata": string, "destination_iata": string, "airfare": number|null, "booking_url": string|null}]}. '
+                "booking_url must be the airline's official website or booking page; set to null if unknown. "
                 "Ensure every flight includes both departure_iata and destination_iata; set departure_iata to the Origin code."
             )
         )

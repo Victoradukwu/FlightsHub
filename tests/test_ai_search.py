@@ -11,5 +11,5 @@ def test_ai_search_public(client):
     assert resp.status_code == 200
     data = resp.json()
     assert "internal_flights" in data
-    assert "external_flights" in data
-    assert isinstance(data["external_flights"], list)
+    assert "external_search_dispatched" in data
+    assert data["external_search_dispatched"] is True

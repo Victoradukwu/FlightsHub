@@ -8,7 +8,7 @@ from sqlmodel import func, select
 from app.websocket_manager import manager
 from authentication.utils import get_current_active_user, get_settings
 from db import SessionDep
-from flights.ai_service import search_flights
+from flights.ai_service import find_internal_flights, notify_external_flights
 from flights.utils import generate_booking_ref, process_reservation
 from models.authentication import User, UserRole
 from models.common import AdminStatus, AirlineAdminLink
@@ -20,7 +20,6 @@ from models.flights import (
     AirportBase,
     AirportUpdate,
     AISearchRequest,
-    ExternalFlight,
     Flight,
     FlightCreate,
     FlightRead,
@@ -472,20 +471,39 @@ async def websocket_seat_updates(websocket: WebSocket, flight_id: int):
         manager.disconnect(flight_id, websocket)
 
 
+@router.websocket("/ws/search/{origin}/{destination}/{date}")
+async def websocket_search_updates(websocket: WebSocket, origin: str, destination: str, date: str):
+    """Connect to this to get the results of GenAI search for flights, based on `ai-search` endpoint below"""
+    try:
+        date_obj = datetime.fromisoformat(date).date()
+    except ValueError:
+        # If date is invalid, just close connection
+        return
+    key = f"{origin.upper()}-{destination.upper()}-{date_obj.isoformat()}"
+    await manager.connect_search(websocket, key)
+    try:
+        while True:
+            await websocket.receive_text()
+    except Exception:
+        manager.disconnect_search(key, websocket)
+
+
 @router.post("/search")
 def ai_search(
     payload: AISearchRequest,
     session: SessionDep,
+    background_tasks: BackgroundTasks,
 ):
     try:
-        date_obj = datetime.fromisoformat(payload.date)
+        date_obj = datetime.fromisoformat(payload.date).date()
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
 
-    internal, external = search_flights(
-        session, payload.origin_iata.upper(), payload.destination_iata.upper(), date_obj
-    )
+    origin = payload.origin_iata.upper()
+    destination = payload.destination_iata.upper()
 
+    # Return internal results immediately
+    internal = find_internal_flights(session, origin, destination, date_obj)
     internal_flights = [
         {
             "id": f.id,
@@ -499,21 +517,12 @@ def ai_search(
         for f in internal
     ]
 
-    external_flights: list[ExternalFlight] = [
-        ExternalFlight(
-            airline_name=x.airline_name,
-            flight_number=x.flight_number,
-            departure_time=x.departure_time,
-            arrival_time=x.arrival_time if x.arrival_time else None,
-            departure_iata=x.departure_iata,
-            destination_iata=x.destination_iata,
-            airfare=x.airfare,
-            booking_url=x.booking_url,
-        ).model_dump()
-        for x in external
-    ]  # type: ignore
+    # Always dispatch external search to websocket subscribers
+    search_key = f"{origin}-{destination}-{date_obj.isoformat()}"
+    background_tasks.add_task(notify_external_flights, search_key, origin, destination, date_obj)
+    dispatched = True
 
     return {
         "internal_flights": internal_flights,
-        "external_flights": external_flights,
+        "external_search_dispatched": dispatched,
     }
