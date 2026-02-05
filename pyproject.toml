@@ -30,6 +30,8 @@ dependencies = [
     "openai>=1.52.0",
     "langchain>=0.3.7",
     "langchain-openai>=0.2.3",
+    "langchain-huggingface>=0.1.0",
+    "huggingface-hub>=0.23.0",
 ]
 
 [dependency-groups]

@@ -10,4 +10,8 @@ def get_ai_provider() -> AIProvider:
         # Lazy import to avoid requiring openai when not used
         from .provider import OpenAIProvider
         return OpenAIProvider()
+    if provider_name == Settings.AIProviderEnum.HUGGINGFACE.value:
+        # Lazy import to avoid requiring langchain-huggingface when not used
+        from .provider import HuggingFaceProvider
+        return HuggingFaceProvider()
     return MockProvider()

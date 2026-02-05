@@ -5,16 +5,15 @@ from enum import StrEnum
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, field_validator
-from pydantic_extra_types.timezone_name import (TimeZoneName,
-                                                timezone_name_settings)
+from pydantic_extra_types import timezone_name as pydantic_tz
 from sqlalchemy import Column, String
 from sqlmodel import Field, Relationship, SQLModel, UniqueConstraint
 
 from .common import AirlineAdminLink, TimestampMixin
 
 
-@timezone_name_settings(strict=False)
-class TZNonStrict(TimeZoneName):
+@pydantic_tz.timezone_name_settings(strict=False)
+class TZNonStrict(pydantic_tz.TimeZoneName):
     pass
 
 
@@ -303,17 +302,6 @@ class AISearchRequest(BaseModel):
     origin_iata: str
     destination_iata: str
     date: str = Field(description="Date string in iso format: YYYY-MM-DD")
-
-
-# class ExternalFlightRead(BaseModel):
-#     airline_name: str
-#     flight_number: str
-#     departure_time: str
-#     arrival_time: str | None
-#     departure_iata: str
-#     destination_iata: str
-#     airfare: str | None
-#     booking_url: str | None
 
 
 class ExternalFlight(BaseModel):

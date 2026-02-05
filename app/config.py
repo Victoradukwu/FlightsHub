@@ -25,11 +25,15 @@ class Settings(BaseSettings):
     # AI / GenAI settings
     class AIProviderEnum(StrEnum):
         OPENAI = "OPENAI"
+        HUGGINGFACE = "HUGGINGFACE"
         MOCK = "MOCK"
 
     AI_PROVIDER: AIProviderEnum | None = None
     OPENAI_API_KEY: str | None = None
     OPENAI_MODEL: str | None = None
+    # HuggingFace (free tier supported)
+    HUGGINGFACE_API_KEY: str | None = None
+    HUGGINGFACE_MODEL: str | None = None
     ALGORITHM: str = "HS256"
     app_name: str = "FlightsHub"
     model_config = SettingsConfigDict(env_file=str(Path(__file__).parent / "local.env"))
