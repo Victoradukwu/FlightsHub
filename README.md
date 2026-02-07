@@ -4,14 +4,11 @@ Simple FastAPI project for managing flights and common endpoints.
 
 ---
 
-## Run the app
-
 ### Set up
 1. Clone directory
-2. Create a file called local.env inside the app directory and populate it with the content of the sample.env file in the project root directory. Update the file accordingly
+2. Create a file called local.env inside the app directory and populate it with the content of the `sample.env` file in the project root directory. Update the file accordingly
 3. Run command: “uv sync”. To install packages
-4. Run command: “docker compose --env-file app/local.env up
-5. Run command: “uv run pytest” to ru. The automated tests
+5. Run command: “uv run pytest” to run the automated tests
 
 ### Development (fast reload) ✅
 
@@ -46,41 +43,36 @@ gunicorn -k uvicorn.workers.UvicornWorker -w 4 -b 0.0.0.0:8000 app.main:app
 ```
 
 
-### GraphQL
-### Websocket==Reservation created and cancelled (Updated seats)
-### Background tasks
+## Docker
+You can also run the application with Docker. Docker compose is used to ochestrate the app and its related services: postgres, redis, and Celery
+1. Run command: “docker compose --env-file app/local.env up
+2. Visit `http://localhost:8000/docs` to access the API documentation
+
+
+## API Paradigms
+The application provides two API paradigms
+- REST API: All features are available in RESTFUL API
+- GraphQL: The application also provides  GraphQL supports for some operations
+
+
+## Other Features
+### Background tasks: Tasks such as user emails are handled with built in FastAPI Background task
+### Celery: Celery Beat is used to handle schedulled tasks such as flight booking payment reminder
+### Websocket: This is used to emmit the current seats of a given flight. This ensures the users always have the current status of each seat, whether available or not. It is also used to return result of flights obtained from external sources using AI
 
 ---
 
 ## GenAI Flight Search (REST)
-
+- Flight search using GenAI with OpenAI and HuggingFace
 - Endpoint: `/api/v1/flights/search` (POST)
 - Purpose: Search flights between two airports for a given date using the internal database. Also returns external AI-suggested flights (GenAI) with booking links.
-- No auto-book: Results only; differentiate internal vs GenAI suggestions.
+- The results from our system is returned immediately, while the result obtained by GenAI from external search is returned via webhook when ready.
 
-### Request body
-
-```
-{
-	"origin_iata": "LOS",
-	"destination_iata": "ABV",
-	"date": "2026-02-02"
-}
-```
-
-### Response
-
-```
-{
-	"internal_flights": [ { /* internal flight info */ } ],
-	"external_flights": [ { /* GenAI suggestion with booking_url */ } ]
-}
-```
 
 ### Provider switching (LangChain)
 
 - Configure in `app/local.env`:
-	- `AI_PROVIDER=MOCK` (default) or `OPENAI`
+	- `AI_PROVIDER=MOCK` (default) or `OPENAI` or `HuggingFace`
 	- `OPENAI_API_KEY=<your_key>`
 	- `OPENAI_MODEL=gpt-4.1-mini`
 

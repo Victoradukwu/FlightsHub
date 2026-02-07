@@ -1,3 +1,5 @@
+import os
+import sys
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
@@ -41,7 +43,15 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings():
-    return Settings()  # type: ignore
+    settings = Settings()  # type: ignore
+    # Force AI provider to MOCK during tests to avoid external calls
+    try:
+        if "PYTEST_CURRENT_TEST" in os.environ or "pytest" in sys.modules:
+            settings.AI_PROVIDER = Settings.AIProviderEnum.MOCK
+    except Exception:
+        # If detection fails, keep existing value
+        pass
+    return settings
 
 
 # Helper to allow tests to reload settings after changing environment vars
